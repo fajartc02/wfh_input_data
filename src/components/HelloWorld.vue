@@ -23,14 +23,14 @@
             placeholder="Search"
             aria-label="Search"
           />
-          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+          <button class="btn btn-outline-success my-2 my-sm-0 btn-sm" type="submit">Search</button>
         </form>
       </div>
     </nav>
     <div class="container mb-4">
       <div class="form-group">
         <label for>Nama</label>
-        <input type="text" class="form-control" v-model="nama" placeholder="Nama kamu" />
+        <input type="username" class="form-control" v-model="nama" placeholder="Nama kamu" />
       </div>
       <div class="form-group">
         <label for>Item Pekerjaan</label>
@@ -43,20 +43,28 @@
       </div>
       <div v-if="isEdit" class="form-group">
         <label for>Status</label>
-        <input type="text" class="form-control" placeholder="percent / OK" v-model="status" />
+        <input ref="foc" type="text" class="form-control" placeholder="percent / O" v-model="status" />
       </div>
       <div v-if="isEdit" class="form-group">
         <label for>Keterangan</label>
         <input type="text" class="form-control" placeholder="masukan input" v-model="keterangan" />
       </div>
-      <button type="button" class="btn btn-primary mr-2" @click="submitWfh" v-if="!isEdit">Submit</button>
-      <button type="button" class="btn btn-success mr-2" @click="editWfh" v-if="isEdit">Submit Edit</button>
-      <button type="button" class="btn btn-secondary">Cancel</button>
+      <button type="button" class="btn btn-primary mr-2 btn-sm" @click="submitWfh" v-if="!isEdit">Submit</button>
+      <button type="button" class="btn btn-success mr-2 btn-sm" @click="editWfh" v-if="isEdit">Submit Edit</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="cancelEdit">Cancel</button>
     </div>
 
     <div class="container-fluid">
-      <h4>{{date}}</h4>
-      <table class="table table-hover">
+      <h4>{{actualDate}}</h4>
+      <download-excel
+        class   = "btn btn-default"
+        :data   = "json_data"
+        :fields = "json_fields"
+        worksheet = "My Worksheet"
+        name    = "wfh_job_maintenance.xls">
+      <button type="button" class="btn btn-primary">Excel Download</button>
+    </download-excel>
+      <table class="table table-hover" style="text-align: left">
         <thead>
           <tr>
             <th scope="col">No</th>
@@ -75,8 +83,8 @@
             <td>{{item.status}}</td>
             <td>{{item.keterangan}}</td>
             <td>
-              <button type="button" class="btn btn-success mr-2" @click="editWfhConf(item)">Edit</button>
-              <button type="button" class="btn btn-danger mr-2" @click="deleteWfh(item._id)">Delete</button>
+              <button type="button" class="btn btn-success mr-2 btn-sm" @click="editWfhConf(item)"><small>✎</small></button>
+              <button type="button" class="btn btn-danger mr-2 btn-sm" @click="deleteWfh(item._id)"><small>🗑️</small></button>
             </td>
           </tr>
         </tbody>
@@ -87,7 +95,8 @@
 
 <script>
 import axios from "axios";
-// import moment from "momentjs";
+import moment from "moment";
+import JsonExcel from "vue-json-excel"
 
 export default {
   name: "HelloWorld",
@@ -103,19 +112,34 @@ export default {
       keterangan: "",
       containerData: [],
       isEdit: false,
-      idGrasp: ""
+      idGrasp: "",
+      actualDate: "",
+      json_fields: {
+        'id': '_id',
+        'Date': 'date',
+        'Nama': 'nama',
+        'Item Pekerjaan': 'itemPekerjaan',
+        'Status': 'status',
+        'Keterangan' : 'keterangan',
+        // 'createdAt' : 'createdAt',
+        // 'updatedAt' : 'updatedAt',
+      },
+      json_data: []
     };
+  },
+  components: {
+    'download-excel': JsonExcel
   },
   methods: {
     submitWfh() {
       let newWfh = {
         nama: this.nama,
-        date: new Date(),
+        date: moment().format('L'),
         itemPekerjaan: this.itemPekerjaan,
         status: this.status,
         keterangan: this.keterangan
       };
-      console.log(newWfh);
+      // console.log(newWfh);
       axios
         .post("http://103.82.241.157:3100/data/createWfh", newWfh)
         .then(result => {
@@ -139,6 +163,17 @@ export default {
       this.status = item.status;
       this.keterangan = item.keterangan;
       this.idGrasp = item._id;
+      this.$nextTick(() => {
+        this.$refs.foc.focus()
+      })
+    },
+    cancelEdit() {
+      this.nama = "";
+          this.itemPekerjaan = "";
+          this.status = "";
+          this.keterangan = "";
+          this.date = "";
+          this.isEdit = false
     },
     editWfh() {
       let editData = {
@@ -181,7 +216,7 @@ export default {
     }
   },
   mounted() {
-    // this.date = moment().format("MMMM Do YYYY, h:mm:ss a");
+    
     axios
       .get("http://103.82.241.157:3100/data/getWfhs")
       .then(result => {
@@ -192,11 +227,14 @@ export default {
         console.log(err);
       });
     setInterval(() => {
+      this.actualDate = moment().format("MMMM Do YYYY, h:mm:ss a");
+    }, 1000)
+    setInterval(() => {
       axios
         .get("http://103.82.241.157:3100/data/getWfhs")
         .then(result => {
-          // console.log(result.data.data);
           this.containerData = result.data.data;
+          this.json_data = result.data.data
         })
         .catch(err => {
           console.log(err);
