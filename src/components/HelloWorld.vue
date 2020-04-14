@@ -43,27 +43,63 @@
       </div>
       <div v-if="isEdit" class="form-group">
         <label for>Status</label>
-        <input ref="foc" type="text" class="form-control" placeholder="percent / O" v-model="status" />
+        <input
+          ref="foc"
+          type="text"
+          class="form-control"
+          placeholder="percent / O"
+          v-model="status"
+        />
       </div>
       <div v-if="isEdit" class="form-group">
         <label for>Keterangan</label>
         <input type="text" class="form-control" placeholder="masukan input" v-model="keterangan" />
       </div>
-      <button type="button" class="btn btn-primary mr-2 btn-sm" @click="submitWfh" v-if="!isEdit">Submit</button>
-      <button type="button" class="btn btn-success mr-2 btn-sm" @click="editWfh" v-if="isEdit">Submit Edit</button>
+      <button
+        type="button"
+        class="btn btn-primary mr-2 btn-sm"
+        @click="submitWfh"
+        v-if="!isEdit"
+      >Submit</button>
+      <button
+        type="button"
+        class="btn btn-success mr-2 btn-sm"
+        @click="editWfh"
+        v-if="isEdit"
+      >Submit Edit</button>
       <button type="button" class="btn btn-secondary btn-sm" @click="cancelEdit">Cancel</button>
     </div>
 
     <div class="container-fluid">
       <h4>{{actualDate}}</h4>
+      <!-- SEARCH -->
+      <div class="container-fluid">
+        <div class="card">
+          <div class="card-header">Search Data</div>
+          <div class="card-body">
+            <!-- <h5 class="card-title">Special title treatment</h5> -->
+            <div class="form-group">
+              <label for="date1">Date</label>
+              <input type="date" class="form-control" v-model="selectedDate" />
+            </div>
+            <div class="form-group">
+              <label for="Name">Name</label>
+              <input type="text" class="form-control" v-model="selectedNama" />
+            </div>
+            <!-- <button class="btn btn-primary" @click="searchData">Search</button> -->
+          </div>
+        </div>
+      </div>
+
       <download-excel
-        class   = "btn btn-default"
-        :data   = "json_data"
-        :fields = "json_fields"
-        worksheet = "My Worksheet"
-        name    = "wfh_job_maintenance.xls">
-      <button type="button" class="btn btn-primary">Excel Download</button>
-    </download-excel>
+        class="btn btn-default"
+        :data="json_data"
+        :fields="json_fields"
+        worksheet="My Worksheet"
+        name="wfh_job_maintenance.xls"
+      >
+        <button type="button" class="btn btn-primary">Excel Download</button>
+      </download-excel>
       <table class="table table-hover" style="text-align: left">
         <thead>
           <tr>
@@ -83,8 +119,12 @@
             <td>{{item.status}}</td>
             <td>{{item.keterangan}}</td>
             <td>
-              <button type="button" class="btn btn-success mr-2 btn-sm" @click="editWfhConf(item)"><small>✎</small></button>
-              <button type="button" class="btn btn-danger mr-2 btn-sm" @click="deleteWfh(item._id)"><small>🗑️</small></button>
+              <button type="button" class="btn btn-success mr-2 btn-sm" @click="editWfhConf(item)">
+                <small>✎</small>
+              </button>
+              <button type="button" class="btn btn-danger mr-2 btn-sm" @click="deleteWfh(item._id)">
+                <small>🗑️</small>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -96,7 +136,7 @@
 <script>
 import axios from "axios";
 import moment from "moment";
-import JsonExcel from "vue-json-excel"
+import JsonExcel from "vue-json-excel";
 
 export default {
   name: "HelloWorld",
@@ -115,26 +155,27 @@ export default {
       idGrasp: "",
       actualDate: "",
       json_fields: {
-        'id': '_id',
-        'Date': 'date',
-        'Nama': 'nama',
-        'Item Pekerjaan': 'itemPekerjaan',
-        'Status': 'status',
-        'Keterangan' : 'keterangan',
-        // 'createdAt' : 'createdAt',
-        // 'updatedAt' : 'updatedAt',
+        id: "_id",
+        Date: "date",
+        Nama: "nama",
+        "Item Pekerjaan": "itemPekerjaan",
+        Status: "status",
+        Keterangan: "keterangan"
       },
-      json_data: []
+      json_data: [],
+      selectedDate: "",
+      selectedNama: "",
+      isChanges: ""
     };
   },
   components: {
-    'download-excel': JsonExcel
+    "download-excel": JsonExcel
   },
   methods: {
     submitWfh() {
       let newWfh = {
         nama: this.nama,
-        date: moment().format('L'),
+        date: moment().format("L"),
         itemPekerjaan: this.itemPekerjaan,
         status: this.status,
         keterangan: this.keterangan
@@ -144,6 +185,7 @@ export default {
         .post("http://103.82.241.157:3100/data/createWfh", newWfh)
         .then(result => {
           console.log(result);
+          this.isChanges = newWfh;
           this.nama = "";
           this.itemPekerjaan = "";
           this.status = "";
@@ -164,16 +206,16 @@ export default {
       this.keterangan = item.keterangan;
       this.idGrasp = item._id;
       this.$nextTick(() => {
-        this.$refs.foc.focus()
-      })
+        this.$refs.foc.focus();
+      });
     },
     cancelEdit() {
       this.nama = "";
-          this.itemPekerjaan = "";
-          this.status = "";
-          this.keterangan = "";
-          this.date = "";
-          this.isEdit = false
+      this.itemPekerjaan = "";
+      this.status = "";
+      this.keterangan = "";
+      this.date = "";
+      this.isEdit = false;
     },
     editWfh() {
       let editData = {
@@ -182,9 +224,6 @@ export default {
         status: this.status,
         keterangan: this.keterangan
       };
-      console.log(editData);
-      console.log(this.idGrasp);
-
       this.isEdit = false;
       axios
         .put(
@@ -193,6 +232,7 @@ export default {
         )
         .then(result => {
           console.log(result);
+          this.isChanges = result;
           this.nama = "";
           this.itemPekerjaan = "";
           this.status = "";
@@ -209,37 +249,129 @@ export default {
         .delete(`http://103.82.241.157:3100/data/deleted/${id}`)
         .then(result => {
           console.log(result);
+          this.isChanges = result;
         })
         .catch(err => {
           console.log(err);
         });
+    },
+    searchData() {
+      // console.log(filterDataToday);
+      // let filterDataNama = rawArray.filter(el => {
+      //   return (
+      //     el.nama.toLowerCase().indexOf(this.selectedNama.toLowerCase()) > -1
+      //   );
+      // });
+    }
+  },
+  watch: {
+    isChanges: function() {
+      axios
+        .get("http://103.82.241.157:3100/data/getWfhs")
+        .then(result => {
+          let rawArray = result.data.data;
+          let filterDataToday = rawArray.filter(element => {
+            let tgl = new Date(element.date).getDate();
+            let month = new Date(element.date).getMonth();
+            let year = new Date(element.date).getFullYear();
+            let curTgl = new Date().getDate();
+            let curMonth = new Date().getMonth();
+            let curYear = new Date().getFullYear();
+            console.log(tgl == curTgl);
+
+            return tgl == curTgl && month == curMonth && year == curYear;
+          });
+          this.containerData = filterDataToday;
+
+          this.json_data = result.data.data;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    selectedNama: function() {
+      if (this.selectedNama == "") {
+        axios
+          .get("http://103.82.241.157:3100/data/getWfhs")
+          .then(result => {
+            let rawArray = result.data.data;
+            let filterDataToday = rawArray.filter(element => {
+              let tgl = new Date(element.date).getDate();
+              let month = new Date(element.date).getMonth();
+              let year = new Date(element.date).getFullYear();
+              let curTgl = new Date(this.selectedDate).getDate();
+              let curMonth = new Date(this.selectedDate).getMonth();
+              let curYear = new Date(this.selectedDate).getFullYear();
+              return tgl == curTgl && month == curMonth && year == curYear;
+            });
+            this.containerData = filterDataToday;
+
+            this.json_data = result.data.data;
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      } else {
+        let rawArray = this.containerData;
+        let filterDataNama = rawArray.filter(el => {
+          return (
+            el.nama.toLowerCase().indexOf(this.selectedNama.toLowerCase()) > -1
+          );
+        });
+        this.containerData = filterDataNama;
+      }
+    },
+    selectedDate: function() {
+      if (this.selectedDate != "") {
+        axios
+          .get("http://103.82.241.157:3100/data/getWfhs")
+          .then(result => {
+            let rawArray = result.data.data;
+            let filterDataToday = rawArray.filter(element => {
+              let tgl = new Date(element.date).getDate();
+              let month = new Date(element.date).getMonth();
+              let year = new Date(element.date).getFullYear();
+              let curTgl = new Date(this.selectedDate).getDate();
+              let curMonth = new Date(this.selectedDate).getMonth();
+              let curYear = new Date(this.selectedDate).getFullYear();
+              return tgl == curTgl && month == curMonth && year == curYear;
+            });
+            this.containerData = filterDataToday;
+
+            this.json_data = result.data.data;
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      }
     }
   },
   mounted() {
-    
+    setInterval(() => {
+      this.actualDate = moment().format("MMMM Do YYYY, h:mm:ss a");
+    }, 1000);
     axios
       .get("http://103.82.241.157:3100/data/getWfhs")
       .then(result => {
-        console.log(result.data.data);
-        this.containerData = result.data.data;
+        let rawArray = result.data.data;
+        let filterDataToday = rawArray.filter(element => {
+          let tgl = new Date(element.date).getDate();
+          let month = new Date(element.date).getMonth();
+          let year = new Date(element.date).getFullYear();
+          let curTgl = new Date().getDate();
+          let curMonth = new Date().getMonth();
+          let curYear = new Date().getFullYear();
+          console.log(tgl == curTgl);
+
+          return tgl == curTgl && month == curMonth && year == curYear;
+        });
+        this.containerData = filterDataToday;
+        this.json_data = result.data.data;
+        this.isChanges = result.data.data;
       })
       .catch(err => {
         console.log(err);
       });
-    setInterval(() => {
-      this.actualDate = moment().format("MMMM Do YYYY, h:mm:ss a");
-    }, 1000)
-    setInterval(() => {
-      axios
-        .get("http://103.82.241.157:3100/data/getWfhs")
-        .then(result => {
-          this.containerData = result.data.data;
-          this.json_data = result.data.data
-        })
-        .catch(err => {
-          console.log(err);
-        });
-    }, 2000);
   }
 };
 </script>
