@@ -28,46 +28,35 @@
       </div>
     </nav>
     <div class="container mb-4">
-      <div class="form-group">
-        <label for>Nama</label>
-        <input type="username" class="form-control" v-model="nama" placeholder="Nama kamu" />
-      </div>
-      <div class="form-group">
-        <label for>Item Pekerjaan</label>
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Buat idea, meeting, etc."
-          v-model="itemPekerjaan"
-        />
-      </div>
-      <div v-if="isEdit" class="form-group">
-        <label for>Status</label>
-        <input
-          ref="foc"
-          type="text"
-          class="form-control"
-          placeholder="percent / O"
-          v-model="status"
-        />
-      </div>
-      <div v-if="isEdit" class="form-group">
-        <label for>Keterangan</label>
-        <input type="text" class="form-control" placeholder="masukan input" v-model="keterangan" />
-      </div>
-      <button
-        type="button"
-        class="btn btn-primary mr-2 btn-sm"
-        @click="submitWfh"
-        v-if="!isEdit"
-      >Submit</button>
-      <button
-        type="button"
-        class="btn btn-success mr-2 btn-sm"
-        @click="editWfh"
-        v-if="isEdit"
-      >Submit Edit</button>
-      <button type="button" class="btn btn-secondary btn-sm" @click="cancelEdit">Cancel</button>
+      <form onsubmit="return false">
+        <div class="form-group">
+          <label for>Nama</label>
+          <input type="text" name="nama" autocomplete="on" class="form-control" v-model="nama" placeholder="Nama kamu" />
+        </div>
+        <div class="form-group">
+          <label for>Item Pekerjaan</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buat idea, meeting, etc."
+            v-model="itemPekerjaan"
+            name="itemPekerjaan"
+            autocomplete="on"
+          />
+        </div>
+        <div v-if="isEdit" class="form-group">
+          <label for>Status</label>
+          <input ref="foc" type="text" class="form-control" placeholder="percent / OK" v-model="status" />
+        </div>
+        <div v-if="isEdit" class="form-group">
+          <label for>Keterangan</label>
+          <input
+           type="text" class="form-control" placeholder="masukan input" v-model="keterangan" />
+        </div>
+        <button type="submit" class="btn btn-primary mr-2 btn-sm" @click="submitWfh" v-if="!isEdit">Submit</button>
+        <button type="submit" class="btn btn-success mr-2 btn-sm" @click="editWfh" v-if="isEdit">Submit Edit</button>
+        <button type="submit" class="btn btn-secondary btn-sm" @click="cancelEdit">Cancel</button>
+      </form>
     </div>
 
     <div class="container-fluid">
@@ -100,6 +89,10 @@
       >
         <button type="button" class="btn btn-primary">Excel Download</button>
       </download-excel>
+      <vue-element-loading :active="isLoading" :is-full-screen="isLoading" spinner="line-wave">
+        <img src="../assets/pingpong.gif" alt="">
+        <h6>Loading . . .</h6>
+      </vue-element-loading>
       <table class="table table-hover" style="text-align: left">
         <thead>
           <tr>
@@ -137,6 +130,8 @@
 import axios from "axios";
 import moment from "moment";
 import JsonExcel from "vue-json-excel";
+// import spinner from "progress-spinner"
+import VueElementLoading from "vue-element-loading"
 
 export default {
   name: "HelloWorld",
@@ -156,7 +151,7 @@ export default {
       actualDate: "",
       json_fields: {
         id: "_id",
-        Date: "date",
+        Date: "updatedAt",
         Nama: "nama",
         "Item Pekerjaan": "itemPekerjaan",
         Status: "status",
@@ -165,11 +160,14 @@ export default {
       json_data: [],
       selectedDate: "",
       selectedNama: "",
-      isChanges: ""
+      isChanges: "",
+      isLoading: false
     };
   },
   components: {
-    "download-excel": JsonExcel
+    "download-excel": JsonExcel,
+    // "progress-spinner": spinner,
+    "vue-element-loading": VueElementLoading
   },
   methods: {
     submitWfh() {
@@ -181,6 +179,7 @@ export default {
         keterangan: this.keterangan
       };
       // console.log(newWfh);
+      this.isLoading = true
       axios
         .post("http://103.82.241.157:3100/data/createWfh", newWfh)
         .then(result => {
@@ -191,6 +190,7 @@ export default {
           this.status = "";
           this.keterangan = "";
           this.date = "";
+          this.isLoading = false
         })
         .catch(err => {
           console.log(err);
@@ -225,6 +225,7 @@ export default {
         keterangan: this.keterangan
       };
       this.isEdit = false;
+      this.isLoading = true
       axios
         .put(
           `http://103.82.241.157:3100/data/editWfh/${this.idGrasp}`,
@@ -233,23 +234,25 @@ export default {
         .then(result => {
           console.log(result);
           this.isChanges = result;
-          this.nama = "";
-          this.itemPekerjaan = "";
+
+this.itemPekerjaan = "";
           this.status = "";
           this.keterangan = "";
           this.date = "";
+          this.isLoading = false
         })
         .catch(err => {
           console.log(err);
         });
-    },
+    }, 
     deleteWfh(id) {
       console.log(id);
-      axios
+      this.isLoading = true
         .delete(`http://103.82.241.157:3100/data/deleted/${id}`)
         .then(result => {
           console.log(result);
-          this.isChanges = result;
+          this.isLoading = false
+          this.isChanges = 4;
         })
         .catch(err => {
           console.log(err);
@@ -266,22 +269,24 @@ export default {
   },
   watch: {
     isChanges: function() {
+      this.isLoading = true
       axios
         .get("http://103.82.241.157:3100/data/getWfhs")
         .then(result => {
-          let rawArray = result.data.data;
-          let filterDataToday = rawArray.filter(element => {
-            let tgl = new Date(element.date).getDate();
-            let month = new Date(element.date).getMonth();
-            let year = new Date(element.date).getFullYear();
-            let curTgl = new Date().getDate();
-            let curMonth = new Date().getMonth();
-            let curYear = new Date().getFullYear();
-            console.log(tgl == curTgl);
+          // let rawArray = result.data.data;
+          // let filterDataToday = rawArray.filter(element => {
+          //   let tgl = new Date(element.date).getDate();
+          //   let month = new Date(element.date).getMonth();
+          //   let year = new Date(element.date).getFullYear();
+          //   let curTgl = new Date().getDate();
+          //   let curMonth = new Date().getMonth();
+          //   let curYear = new Date().getFullYear();
+          //   console.log(tgl == curTgl);
 
-            return tgl == curTgl && month == curMonth && year == curYear;
-          });
-          this.containerData = filterDataToday;
+          //   return tgl == curTgl && month == curMonth && year == curYear;
+          // });
+          this.isLoading = false
+          this.containerData = result.data.data;
 
           this.json_data = result.data.data;
         })
@@ -291,8 +296,11 @@ export default {
     },
     selectedNama: function() {
       if (this.selectedNama == "") {
+        this.isLoading = true
+        if (this.selectedDate != "") {
+        this.isLoading = true;
         axios
-          .get("http://103.82.241.157:3100/data/getWfhs")
+          .get(`http://103.82.241.157:3100/data/getWfhs/date=${this.selectedDate}`)
           .then(result => {
             let rawArray = result.data.data;
             let filterDataToday = rawArray.filter(element => {
@@ -304,13 +312,26 @@ export default {
               let curYear = new Date(this.selectedDate).getFullYear();
               return tgl == curTgl && month == curMonth && year == curYear;
             });
+            this.isLoading = false
             this.containerData = filterDataToday;
-
-            this.json_data = result.data.data;
+            this.json_data = filterDataToday;
           })
           .catch(err => {
             console.log(err);
           });
+      } else {
+        axios
+          .get("http://103.82.241.157:3100/data/getWfhs")
+          .then(result => {
+            this.containerData = result.data.data;
+
+            this.json_data = result.data.data;
+            this.isLoading = false
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      }
       } else {
         let rawArray = this.containerData;
         let filterDataNama = rawArray.filter(el => {
@@ -323,8 +344,9 @@ export default {
     },
     selectedDate: function() {
       if (this.selectedDate != "") {
+        this.isLoading = true;
         axios
-          .get("http://103.82.241.157:3100/data/getWfhs")
+          .get(`http://103.82.241.157:3100/data/getWfhs/date=${this.selectedDate}`)
           .then(result => {
             let rawArray = result.data.data;
             let filterDataToday = rawArray.filter(element => {
@@ -336,9 +358,9 @@ export default {
               let curYear = new Date(this.selectedDate).getFullYear();
               return tgl == curTgl && month == curMonth && year == curYear;
             });
+            this.isLoading = false
             this.containerData = filterDataToday;
-
-            this.json_data = result.data.data;
+            this.json_data = filterDataToday;
           })
           .catch(err => {
             console.log(err);
@@ -347,27 +369,30 @@ export default {
     }
   },
   mounted() {
-    setInterval(() => {
-      this.actualDate = moment().format("MMMM Do YYYY, h:mm:ss a");
-    }, 1000);
+    this.actualDate = moment().format("MMMM Do YYYY, h:mm:ss a");
+    // setInterval(() => {
+    //   this.actualDate = moment().format("MMMM Do YYYY, h:mm:ss a");
+    // }, 1000);
+    this.isLoading = true
     axios
-      .get("http://103.82.241.157:3100/data/getWfhs")
+      .get("http://103.82.241.157:3100/data/getWfhs/")
       .then(result => {
-        let rawArray = result.data.data;
-        let filterDataToday = rawArray.filter(element => {
-          let tgl = new Date(element.date).getDate();
-          let month = new Date(element.date).getMonth();
-          let year = new Date(element.date).getFullYear();
-          let curTgl = new Date().getDate();
-          let curMonth = new Date().getMonth();
-          let curYear = new Date().getFullYear();
-          console.log(tgl == curTgl);
+        // let rawArray = result.data.data;
+        // let filterDataToday = rawArray.filter(element => {
+        //   let tgl = new Date(element.date).getDate();
+        //   let month = new Date(element.date).getMonth();
+        //   let year = new Date(element.date).getFullYear();
+        //   let curTgl = new Date().getDate();
+        //   let curMonth = new Date().getMonth();
+        //   let curYear = new Date().getFullYear();
+        //   console.log(tgl == curTgl);
 
-          return tgl == curTgl && month == curMonth && year == curYear;
-        });
-        this.containerData = filterDataToday;
+        //   return tgl == curTgl && month == curMonth && year == curYear;
+        // });
+        this.containerData = result.data.data;
         this.json_data = result.data.data;
-        this.isChanges = result.data.data;
+        this.isLoading = false
+        // this.isChanges = result.data.data;
       })
       .catch(err => {
         console.log(err);
