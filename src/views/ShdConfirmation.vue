@@ -1,9 +1,9 @@
 <template>
   <div class="container-fluid" style="padding: 0px">
     <vue-element-loading :active="isLoading" :is-full-screen="isLoading" spinner="line-wave">
-        <img src="../assets/pingpong.gif" alt />
-        <h6>Loading . . .</h6>
-      </vue-element-loading>
+      <img src="../assets/pingpong.gif" alt />
+      <h6>Loading . . .</h6>
+    </vue-element-loading>
     <nav class="navbar navbar-light" style="background-color: #3B5998;">
       <a class="navbar-brand" href="#" style="color: white">SHD Confirmation Monitoring</a>
     </nav>
@@ -11,6 +11,11 @@
     <CarouselCovid />
     <div style="height: 15px"></div>
     <!-- input SHD -->
+    <div
+      v-if="isError"
+      class="alert alert-danger"
+      role="alert"
+    >Data yang anda input Hari ini sudah ada, mohon check dan konfirmasi kembali :)</div>
     <div class="container-fluid">
       <a
         data-toggle="collapse"
@@ -63,6 +68,14 @@
     </div>
     <!-- chart SHD -->
     <div class="container-fluid">
+      <div class="row">
+        <div class="col-6">
+          <h6>Target: {{55}}</h6>
+        </div>
+        <div class="col-6">
+          <h6>Actual: {{this.containerData.length}}</h6>
+        </div>
+      </div>
       <div class="small">
         <line-chart :chart-data="datacollection" :options="options"></line-chart>
       </div>
@@ -94,7 +107,7 @@
           <tbody v-if="containerData && containerData.length !== 0">
             <tr v-for="(item, index) in containerData" :key="index">
               <th scope="row">{{index+1}}</th>
-              <td>{{item.name}}</td>
+              <td style="text-align: left">{{item.name}}</td>
               <td>{{item.shift}}</td>
               <td>{{item.status}}</td>
             </tr>
@@ -128,6 +141,18 @@ export default {
       options: {
         legend: {
           display: false
+        },
+        scales: {
+          yAxes: [
+            {
+              display: true,
+              ticks: {
+                suggestedMin: 0, // minimum will be 0, unless there is a lower value.
+                // OR //
+                beginAtZero: true // minimum value will be 0.
+              }
+            }
+          ]
         }
       },
       isLoading: false,
@@ -174,7 +199,7 @@ export default {
           },
           {
             label: "Completed",
-            backgroundColor: ["#e87979", "#3b5998", "#3a9676"],
+            backgroundColor: ["#4365ef", "#f24358", "#3a9676"],
             data: [this.completedStaff, this.completedRed, this.completedWhite]
           }
         ]
@@ -193,7 +218,7 @@ export default {
           },
           {
             label: "Completed",
-            backgroundColor: ["#e87979", "#3b5998", "#3a9676"],
+            backgroundColor: ["#4365ef", "#f24358", "#3a9676"],
             data: [this.completedStaff, this.completedRed, this.completedWhite]
           }
         ]
@@ -212,7 +237,7 @@ export default {
           },
           {
             label: "Completed",
-            backgroundColor: ["#e87979", "#3b5998", "#3a9676"],
+            backgroundColor: ["#4365ef", "#f24358", "#3a9676"],
             data: [this.completedStaff, this.completedRed, this.completedWhite]
           }
         ]
@@ -227,14 +252,15 @@ export default {
     }
   },
   methods: {
+    //   2020-05-22
     getStaffData() {
       this.isActiveBtn = true;
-      this.isLoading = true
+      this.isLoading = true;
       axios
         .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
         .then(result => {
           console.log("staff");
-          this.isLoading = false
+          this.isLoading = false;
           this.isActiveStaff = "btn btn-primary";
           this.isActiveRed = "btn btn-outline-danger";
           this.isActiveWhite = "btn btn-outline-success";
@@ -247,13 +273,13 @@ export default {
         });
     },
     getRedData() {
-      this.isLoading = true
+      this.isLoading = true;
       this.isActiveBtn = true;
       axios
         .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
         .then(result => {
           console.log("red");
-          this.isLoading = false
+          this.isLoading = false;
           this.isActiveStaff = "btn btn-outline-primary";
           this.isActiveRed = "btn btn-danger";
           this.isActiveWhite = "btn btn-outline-success";
@@ -267,12 +293,12 @@ export default {
     },
     getWhiteData() {
       this.isActiveBtn = true;
-      this.isLoading = true
+      this.isLoading = true;
       axios
         .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
         .then(result => {
           console.log("white");
-          this.isLoading = false
+          this.isLoading = false;
           this.isActiveStaff = "btn btn-outline-primary";
           this.isActiveRed = "btn btn-outline-danger";
           this.isActiveWhite = "btn btn-success";
@@ -290,16 +316,16 @@ export default {
         date: this.date,
         shift: this.shift
       };
-      this.isLoading = true
+      this.isLoading = true;
       await axios
         .post("http://103.82.241.157:3100/data/createShd", newShd)
-        .then(result => {
-          this.isLoading = false
+        .then(async result => {
+          this.isLoading = false;
           console.log(result);
           this.name = "";
           this.date = "";
           this.shift = "";
-          axios
+          await axios
             .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
             .then(result => {
               console.log("staff");
@@ -310,7 +336,7 @@ export default {
             .catch(err => {
               console.log(err);
             });
-          axios
+          await axios
             .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
             .then(result => {
               //   console.log("red");
@@ -320,7 +346,7 @@ export default {
             .catch(err => {
               console.log(err);
             });
-          axios
+          await axios
             .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
             .then(result => {
               //   console.log("white");
@@ -332,17 +358,76 @@ export default {
             });
         })
         .catch(err => {
-          this.isError = true
+          this.isError = true;
+          this.isLoading = false;
           console.log(err);
         });
     }
   },
-  mounted() {
+  async mounted() {
     this.today = `${new Date().getDate()}-${new Date().getMonth() +
       1}-${new Date().getFullYear()}`;
     this.time = `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getMilliseconds()}`;
     console.log("no repeat");
-    setInterval(() => {
+    this.datacollection = {
+      labels: [`Staff MT`, "OP MT Red", "OP MT White"],
+      datasets: [
+        {
+          label: "Target",
+          type: "line",
+          fill: false,
+          backgroundColor: "#00f4e4",
+          data: [11, 22, 22]
+        },
+        {
+          label: "Completed",
+          backgroundColor: ["#4365ef", "#f24358", "#3a9676"],
+          data: [this.completedStaff, this.completedRed, this.completedWhite]
+        }
+      ]
+    };
+    if (!this.isActiveBtn) {
+      axios
+        .get("http://103.82.241.157:3100/data/getShdToday")
+        .then(result => {
+          //   console.log("today");
+          console.log(result);
+          this.containerData = result.data.data;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
+    await axios
+      .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
+      .then(result => {
+        console.log("staff");
+        this.completedStaff = result.data.data.length;
+        console.log(result);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    await axios
+      .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
+      .then(result => {
+        //   console.log("red");
+        this.completedRed = result.data.data.length;
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    await axios
+      .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
+      .then(result => {
+        //   console.log("white");
+        this.completedWhite = result.data.data.length;
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    setInterval(async () => {
+      this.isError = false;
       console.log("repeat");
       this.datacollection = {
         labels: [`Staff MT`, "OP MT Red", "OP MT White"],
@@ -356,7 +441,7 @@ export default {
           },
           {
             label: "Completed",
-            backgroundColor: ["#e87979", "#3b5998", "#3a9676"],
+            backgroundColor: ["#4365ef", "#f24358", "#3a9676"],
             data: [this.completedStaff, this.completedRed, this.completedWhite]
           }
         ]
@@ -373,7 +458,7 @@ export default {
             console.log(err);
           });
       }
-      axios
+      await axios
         .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
         .then(result => {
           console.log("staff");
@@ -383,7 +468,7 @@ export default {
         .catch(err => {
           console.log(err);
         });
-      axios
+      await axios
         .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
         .then(result => {
           //   console.log("red");
@@ -392,7 +477,7 @@ export default {
         .catch(err => {
           console.log(err);
         });
-      axios
+      await axios
         .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
         .then(result => {
           //   console.log("white");
@@ -401,7 +486,7 @@ export default {
         .catch(err => {
           console.log(err);
         });
-    }, 3000);
+    }, 10000);
   }
 };
 </script>
