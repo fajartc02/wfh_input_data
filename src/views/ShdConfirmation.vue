@@ -48,9 +48,9 @@
                 v-model="name"
               />
             </div>
-            <div class="form-group">
+            <div class="form-group" translate="no">
               <label for="shift1">Shift</label>
-              <select class="form-control" id="Hour" v-model="shift">
+              <select translate="no" class="form-control" id="Hour" v-model="shift">
                 <option disabled value>--choose shift--</option>
                 <option>STAFF</option>
                 <option>RED</option>
