@@ -47,6 +47,7 @@
                 placeholder="Nama Kamu"
                 v-model="name"
               />
+              <small>namanya samain sama table di bawah ya. Terima kasih :)</small>
             </div>
             <div class="form-group" translate="no">
               <label for="shift1">Shift</label>
@@ -73,7 +74,7 @@
           <h6>Target: {{55}}</h6>
         </div>
         <div class="col-6">
-          <h6>Actual: {{this.containerData.length}}</h6>
+          <h6>Actual: {{totalCompleted}}</h6>
         </div>
       </div>
       <div class="small">
@@ -82,7 +83,7 @@
     </div>
     <!-- table -->
     <div class="container-fluid" style="margin-top: 250px; padding: 0px">
-      <h5>{{`${new Date().getFullYear()}-0${new Date().getMonth()+1}-${new Date().getDate()}`}}</h5>
+      <h5>{{today}}</h5>
       <div class="row">
         <div class="col-4">
           <button :class="isActiveStaff" @click="getStaffData">Staff</button>
@@ -109,11 +110,13 @@
               <th scope="row">{{index+1}}</th>
               <td style="text-align: left">{{item.name}}</td>
               <td>{{item.shift}}</td>
-              <td>{{item.status}}</td>
+              <td v-if="item.status == 'NG'" style="background-color: red">{{item.status}}</td>
+              <td v-else>{{item.status}}</td>
             </tr>
           </tbody>
           <tbody v-else>
-            <tr>
+            <th v-if="isFill" scope="row" colspan="4">Sedang Load Data</th>
+            <tr v-else>
               <th scope="row" colspan="4">belum ada yang input hari ini</th>
             </tr>
           </tbody>
@@ -165,10 +168,13 @@ export default {
       shift: "",
       date: "",
       time: "",
+      isFill: false,
       completedStaff: 0,
       isActiveBtn: false,
       completedRed: 0,
       completedWhite: 0,
+      totalCompleted: 0,
+      eachTarget: 0,
       isError: false,
       staffName: [
         "ACENG KURNIA NUGRAHA",
@@ -242,13 +248,6 @@ export default {
           }
         ]
       };
-    },
-    containerData: function() {
-      // if(this.isLoading == false) {
-      //   this.isLoading = true
-      // } else {
-      //   this.isLoading = false
-      // }
     }
   },
   methods: {
@@ -257,14 +256,27 @@ export default {
       this.isActiveBtn = true;
       this.isLoading = true;
       axios
-        .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdTodayShift/STAFF`
+        )
         .then(result => {
           console.log("staff");
           this.isLoading = false;
           this.isActiveStaff = "btn btn-primary";
           this.isActiveRed = "btn btn-outline-danger";
           this.isActiveWhite = "btn btn-outline-success";
-          this.completedStaff = result.data.data.length;
+          axios
+            .get(
+              `http://${process.env.VUE_APP_LOCAL_IP ||
+                "103.82.241.157:3100"}/data/getShdTodayShiftOK/STAFF`
+            )
+            .then(result => {
+              this.completedStaff = result.data.data.length;
+            })
+            .catch(err => {
+              console.log(err);
+            });
           console.log(result);
           this.containerData = result.data.data;
         })
@@ -276,14 +288,27 @@ export default {
       this.isLoading = true;
       this.isActiveBtn = true;
       axios
-        .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdTodayShift/RED`
+        )
         .then(result => {
           console.log("red");
           this.isLoading = false;
           this.isActiveStaff = "btn btn-outline-primary";
           this.isActiveRed = "btn btn-danger";
           this.isActiveWhite = "btn btn-outline-success";
-          this.completedRed = result.data.data.length;
+          axios
+            .get(
+              `http://${process.env.VUE_APP_LOCAL_IP ||
+                "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+            )
+            .then(result => {
+              this.completedRed = result.data.data.length;
+            })
+            .catch(err => {
+              console.log(err);
+            });
           console.log(result);
           this.containerData = result.data.data;
         })
@@ -295,14 +320,27 @@ export default {
       this.isActiveBtn = true;
       this.isLoading = true;
       axios
-        .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdTodayShift/WHITE`
+        )
         .then(result => {
           console.log("white");
           this.isLoading = false;
           this.isActiveStaff = "btn btn-outline-primary";
           this.isActiveRed = "btn btn-outline-danger";
           this.isActiveWhite = "btn btn-success";
-          this.completedWhite = result.data.data.length;
+          axios
+            .get(
+              `http://${process.env.VUE_APP_LOCAL_IP ||
+                "103.82.241.157:3100"}/data/getShdTodayShiftOK/WHITE`
+            )
+            .then(result => {
+              this.completedWhite = result.data.data.length;
+            })
+            .catch(err => {
+              console.log(err);
+            });
           console.log(result);
           this.containerData = result.data.data;
         })
@@ -318,55 +356,229 @@ export default {
       };
       this.isLoading = true;
       await axios
-        .post("http://103.82.241.157:3100/data/createShd", newShd)
+        .post(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/createShd`,
+          newShd
+        )
         .then(async result => {
           this.isLoading = false;
           console.log(result);
           this.name = "";
           this.date = "";
           this.shift = "";
-          await axios
-            .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
-            .then(result => {
-              console.log("staff");
-              this.completedStaff = result.data.data.length;
-              this.containerData = result.data.data;
-              console.log(result);
-            })
-            .catch(err => {
-              console.log(err);
-            });
-          await axios
-            .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
-            .then(result => {
-              //   console.log("red");
-              this.completedRed = result.data.data.length;
-              this.containerData = result.data.data;
-            })
-            .catch(err => {
-              console.log(err);
-            });
-          await axios
-            .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
-            .then(result => {
-              //   console.log("white");
-              this.completedWhite = result.data.data.length;
-              this.containerData = result.data.data;
-            })
-            .catch(err => {
-              console.log(err);
-            });
+          if (!this.isActiveBtn) {
+            await axios
+              .get(
+                `http://${process.env.VUE_APP_LOCAL_IP ||
+                  "103.82.241.157:3100"}/data/getShdTodayShift/STAFF`
+              )
+              .then(result => {
+                console.log("staff");
+                axios
+                  .get(
+                    `http://${process.env.VUE_APP_LOCAL_IP ||
+                      "103.82.241.157:3100"}/data/getShdTodayShiftOK/STAFF`
+                  )
+                  .then(result => {
+                    this.completedStaff = result.data.data.length;
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+                // this.containerData = result.data.data;
+                console.log(result);
+              })
+              .catch(err => {
+                console.log(err);
+              });
+            await axios
+              .get(
+                `http://${process.env.VUE_APP_LOCAL_IP ||
+                  "103.82.241.157:3100"}/data/getShdTodayShift/RED`
+              )
+              .then(result => {
+                console.log(result);
+                axios
+                  .get(
+                    `http://${process.env.VUE_APP_LOCAL_IP ||
+                      "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+                  )
+                  .then(result => {
+                    this.completedRed = result.data.data.length;
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+                // this.containerData = result.data.data;
+              })
+              .catch(err => {
+                console.log(err);
+              });
+            await axios
+              .get(
+                `http://${process.env.VUE_APP_LOCAL_IP ||
+                  "103.82.241.157:3100"}/data/getShdTodayShift/WHITE`
+              )
+              .then(result => {
+                console.log(result);
+                axios
+                  .get(
+                    `http://${process.env.VUE_APP_LOCAL_IP ||
+                      "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+                  )
+                  .then(result => {
+                    this.completedWhite = result.data.data.length;
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+                // this.containerData = result.data.data;
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          } else {
+            await axios
+              .get(
+                `http://${process.env.VUE_APP_LOCAL_IP ||
+                  "103.82.241.157:3100"}/data/getShdTodayShift/STAFF`
+              )
+              .then(result => {
+                console.log("staff");
+                axios
+                  .get(
+                    `http://${process.env.VUE_APP_LOCAL_IP ||
+                      "103.82.241.157:3100"}/data/getShdTodayShiftOK/STAFF`
+                  )
+                  .then(result => {
+                    this.completedStaff = result.data.data.length;
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+                this.containerData = result.data.data;
+                console.log(result);
+              })
+              .catch(err => {
+                console.log(err);
+              });
+            await axios
+              .get(
+                `http://${process.env.VUE_APP_LOCAL_IP ||
+                  "103.82.241.157:3100"}/data/getShdTodayShift/RED`
+              )
+              .then(result => {
+                //   console.log("red");
+                axios
+                  .get(
+                    `http://${process.env.VUE_APP_LOCAL_IP ||
+                      "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+                  )
+                  .then(result => {
+                    this.completedRed = result.data.data.length;
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+                this.containerData = result.data.data;
+              })
+              .catch(err => {
+                console.log(err);
+              });
+            await axios
+              .get(
+                `http://${process.env.VUE_APP_LOCAL_IP ||
+                  "103.82.241.157:3100"}/data/getShdTodayShift/WHITE`
+              )
+              .then(result => {
+                //   console.log("white");
+                axios
+                  .get(
+                    `http://${process.env.VUE_APP_LOCAL_IP ||
+                      "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+                  )
+                  .then(result => {
+                    this.completedWhite = result.data.data.length;
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
+                this.containerData = result.data.data;
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          }
         })
         .catch(err => {
           this.isError = true;
           this.isLoading = false;
           console.log(err);
         });
+    },
+    judgShd() {
+      console.log("last");
+    },
+    async fillShd() {
+      this.isFill = true;
+      if (this.containerData == false) {
+        await axios
+          .get(`http://${process.env.VUE_APP_PUBLIC_IP}/data/getShdFirstDate`)
+          .then(result => {
+            //   console.log("today");
+            let firstData = result.data.data;
+            if (new Date().getDate() < 10 && new Date().getMonth() < 10) {
+              this.today = `${new Date().getFullYear()}-0${new Date().getMonth() +
+                1}-0${new Date().getDate()}`;
+            } else {
+              this.today = `${new Date().getDate()}-${new Date().getMonth() +
+                1}-${new Date().getFullYear()}`;
+            }
+            for (let i = 0; i < firstData.length; i++) {
+              console.log(firstData[i]);
+              let newShd = {
+                name: firstData[i].name,
+                date: this.today,
+                shift: firstData[i].shift
+              };
+              axios
+                .post(
+                  `http://${process.env.VUE_APP_LOCAL_IP ||
+                    "103.82.241.157:3100"}/data/fillShd`,
+                  newShd
+                )
+                .then(result => {
+                  console.log(result);
+                })
+                .catch(err => {
+                  console.log(err);
+                });
+            }
+            console.log(result);
+            // this.containerData = result.data.data;
+            this.isFill = false;
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      } else {
+        this.isFill = false;
+      }
+    },
+    calcTotalCompleted() {
+      this.totalCompleted =
+        this.completedStaff + this.completedRed + this.completedWhite;
     }
   },
   async mounted() {
-    this.today = `${new Date().getDate()}-${new Date().getMonth() +
-      1}-${new Date().getFullYear()}`;
+    if (new Date().getDate() < 10 && new Date().getMonth() < 10) {
+      this.today = `${new Date().getFullYear()}-0${new Date().getMonth() +
+        1}-0${new Date().getDate()}`;
+    } else {
+      this.today = `${new Date().getDate()}-${new Date().getMonth() +
+        1}-${new Date().getFullYear()}`;
+    }
     this.time = `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getMilliseconds()}`;
     console.log("no repeat");
     this.datacollection = {
@@ -387,8 +599,11 @@ export default {
       ]
     };
     if (!this.isActiveBtn) {
-      axios
-        .get("http://103.82.241.157:3100/data/getShdToday")
+      await axios
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdToday`
+        )
         .then(result => {
           //   console.log("today");
           console.log(result);
@@ -397,9 +612,14 @@ export default {
         .catch(err => {
           console.log(err);
         });
+      await this.fillShd();
+      await this.calcTotalCompleted();
     }
     await axios
-      .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
+      .get(
+        `http://${process.env.VUE_APP_LOCAL_IP ||
+          "103.82.241.157:3100"}/data/getShdTodayShiftOK/STAFF`
+      )
       .then(result => {
         console.log("staff");
         this.completedStaff = result.data.data.length;
@@ -409,7 +629,10 @@ export default {
         console.log(err);
       });
     await axios
-      .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
+      .get(
+        `http://${process.env.VUE_APP_LOCAL_IP ||
+          "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+      )
       .then(result => {
         //   console.log("red");
         this.completedRed = result.data.data.length;
@@ -418,7 +641,10 @@ export default {
         console.log(err);
       });
     await axios
-      .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
+      .get(
+        `http://${process.env.VUE_APP_LOCAL_IP ||
+          "103.82.241.157:3100"}/data/getShdTodayShiftOK/WHITE`
+      )
       .then(result => {
         //   console.log("white");
         this.completedWhite = result.data.data.length;
@@ -448,7 +674,10 @@ export default {
       };
       if (!this.isActiveBtn) {
         axios
-          .get("http://103.82.241.157:3100/data/getShdToday")
+          .get(
+            `http://${process.env.VUE_APP_LOCAL_IP ||
+              "103.82.241.157:3100"}/data/getShdToday`
+          )
           .then(result => {
             //   console.log("today");
             console.log(result);
@@ -459,7 +688,10 @@ export default {
           });
       }
       await axios
-        .get("http://103.82.241.157:3100/data/getShdTodayShift/STAFF")
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdTodayShiftOK/STAFF`
+        )
         .then(result => {
           console.log("staff");
           this.completedStaff = result.data.data.length;
@@ -469,7 +701,10 @@ export default {
           console.log(err);
         });
       await axios
-        .get("http://103.82.241.157:3100/data/getShdTodayShift/RED")
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdTodayShiftOK/RED`
+        )
         .then(result => {
           //   console.log("red");
           this.completedRed = result.data.data.length;
@@ -478,7 +713,10 @@ export default {
           console.log(err);
         });
       await axios
-        .get("http://103.82.241.157:3100/data/getShdTodayShift/WHITE")
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+            "103.82.241.157:3100"}/data/getShdTodayShiftOK/WHITE`
+        )
         .then(result => {
           //   console.log("white");
           this.completedWhite = result.data.data.length;
@@ -486,7 +724,9 @@ export default {
         .catch(err => {
           console.log(err);
         });
-    }, 10000);
+      await this.fillShd();
+      await this.calcTotalCompleted();
+    }, 3000);
   }
 };
 </script>
