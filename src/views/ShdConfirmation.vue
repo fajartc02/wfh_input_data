@@ -6,6 +6,7 @@
     </vue-element-loading>
     <nav class="navbar navbar-light" style="background-color: #3B5998;">
       <a class="navbar-brand" href="#" style="color: white">SHD Confirmation Monitoring</a>
+      <button v-if="isSecret" @click="fillShd">FillData</button>
     </nav>
     <div style="height: 5px"></div>
     <CarouselCovid />
@@ -15,7 +16,7 @@
       v-if="isError"
       class="alert alert-danger"
       role="alert"
-    >Data yang anda input Hari ini sudah ada, mohon check dan konfirmasi kembali :)</div>
+    >Data yang anda input Hari ini sudah ada atau tidak terdaftar, mohon check dan konfirmasi kembali :)</div>
     <div class="container-fluid">
       <a
         data-toggle="collapse"
@@ -108,11 +109,14 @@
           <tbody v-if="containerData && containerData.length !== 0">
             <tr v-for="(item, index) in containerData" :key="index">
               <!-- <tr v-if="index < 55"> -->
-                <th v-if="index < 55" scope="row">{{index+1}}</th>
-                <td v-if="index < 55" style="text-align: left">{{item.name}}</td>
-                <td v-if="index < 55">{{item.shift}}</td>
-                <td  v-if="item.status == 'NG' && index < 55" style="background-color: red">{{item.status}}</td>
-                <td v-else-if="index < 55 && item.status == 'OK'">{{item.status}}</td>
+              <th v-if="index < 55" scope="row">{{index+1}}</th>
+              <td v-if="index < 55" style="text-align: left">{{item.name}}</td>
+              <td v-if="index < 55">{{item.shift}}</td>
+              <td
+                v-if="item.status == 'NG' && index < 55"
+                style="background-color: red"
+              >{{item.status}}</td>
+              <td v-else-if="index < 55 && item.status == 'OK'">{{item.status}}</td>
               <!-- </tr> -->
             </tr>
           </tbody>
@@ -160,6 +164,8 @@ export default {
           ]
         }
       },
+      isSecret: false,
+      password: "",
       isLoading: false,
       containerData: false,
       isActiveStaff: "btn btn-outline-primary",
@@ -212,7 +218,7 @@ export default {
           }
         ]
       };
-      if(this.isActiveBtn) {
+      if (this.isActiveBtn) {
         axios
           .get(
             `http://${process.env.VUE_APP_LOCAL_IP ||
@@ -257,7 +263,7 @@ export default {
           }
         ]
       };
-      if(this.isActiveBtn) {
+      if (this.isActiveBtn) {
         axios
           .get(
             `http://${process.env.VUE_APP_LOCAL_IP ||
@@ -281,7 +287,6 @@ export default {
           .catch(err => {
             console.log(err);
           });
-            
       }
     },
     completedWhite: function() {
@@ -302,7 +307,7 @@ export default {
           }
         ]
       };
-      if(this.isActiveBtn) {
+      if (this.isActiveBtn) {
         axios
           .get(
             `http://${process.env.VUE_APP_LOCAL_IP ||
@@ -327,6 +332,11 @@ export default {
             console.log(err);
           });
       }
+    },
+    password: function() {
+      if (this.password == "WRS") {
+        this.isSecret = true;
+      }
     }
   },
   methods: {
@@ -334,6 +344,7 @@ export default {
     getStaffData() {
       this.isActiveBtn = true;
       this.isLoading = true;
+      this.password = this.password + "S";
       axios
         .get(
           `http://${process.env.VUE_APP_LOCAL_IP ||
@@ -366,6 +377,7 @@ export default {
     getRedData() {
       this.isLoading = true;
       this.isActiveBtn = true;
+      this.password = this.password + "R";
       axios
         .get(
           `http://${process.env.VUE_APP_LOCAL_IP ||
@@ -398,6 +410,7 @@ export default {
     getWhiteData() {
       this.isActiveBtn = true;
       this.isLoading = true;
+      this.password = this.password + "W";
       axios
         .get(
           `http://${process.env.VUE_APP_LOCAL_IP ||
@@ -601,14 +614,14 @@ export default {
     },
     async fillShd() {
       this.isFill = true;
-      if (this.containerData == false) {
+      if (this.containerData !== false) {
         await axios
           .get(`http://${process.env.VUE_APP_PUBLIC_IP}/data/getShdFirstDate`)
           .then(result => {
             //   console.log("today");
             let firstData = result.data.data;
             console.log(firstData);
-            
+
             if (new Date().getDate() < 10 && new Date().getMonth() < 10) {
               this.today = `${new Date().getFullYear()}-0${new Date().getMonth() +
                 1}-0${new Date().getDate()}`;
@@ -616,26 +629,26 @@ export default {
               this.today = `${new Date().getDate()}-${new Date().getMonth() +
                 1}-${new Date().getFullYear()}`;
             }
-            // for (let i = 0; i < firstData.length; i++) {
-            //   console.log(firstData[i]);
-            //   let newShd = {
-            //     name: firstData[i].name,
-            //     date: this.today,
-            //     shift: firstData[i].shift
-            //   };
-            //   axios
-            //     .post(
-            //       `http://${process.env.VUE_APP_LOCAL_IP ||
-            //         "103.82.241.157:3100"}/data/fillShd`,
-            //       newShd
-            //     )
-            //     .then(result => {
-            //       console.log(result);
-            //     })
-            //     .catch(err => {
-            //       console.log(err);
-            //     });
-            // }
+            for (let i = 0; i < firstData.length; i++) {
+              console.log(firstData[i]);
+              let newShd = {
+                name: firstData[i].name,
+                date: this.date,
+                shift: firstData[i].shift
+              };
+              axios
+                .post(
+                  `http://${process.env.VUE_APP_LOCAL_IP ||
+                    "103.82.241.157:3100"}/data/fillShd`,
+                  newShd
+                )
+                .then(result => {
+                  console.log(result);
+                })
+                .catch(err => {
+                  console.log(err);
+                });
+            }
             console.log(result);
             // this.containerData = result.data.data;
             this.isFill = false;
@@ -693,7 +706,7 @@ export default {
         .catch(err => {
           console.log(err);
         });
-      await this.fillShd();
+      // await this.fillShd();
       await this.calcTotalCompleted();
     }
     await axios
@@ -761,7 +774,7 @@ export default {
           )
           .then(result => {
             //   console.log("today");
-            console.log(result);
+            // console.log(result);
             this.containerData = result.data.data;
           })
           .catch(err => {
@@ -776,7 +789,7 @@ export default {
         .then(result => {
           console.log("staff");
           this.completedStaff = result.data.data.length;
-          console.log(result);
+          // console.log(result);
         })
         .catch(err => {
           console.log(err);
@@ -805,7 +818,7 @@ export default {
         .catch(err => {
           console.log(err);
         });
-      await this.fillShd();
+      // await this.fillShd();
       await this.calcTotalCompleted();
     }, 3000);
   }
