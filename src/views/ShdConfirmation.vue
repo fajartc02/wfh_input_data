@@ -337,6 +337,26 @@ export default {
       if (this.password == "WRS") {
         this.isSecret = true;
       }
+    },
+    name: function() {
+      axios
+        .get(
+          `http://${process.env.VUE_APP_LOCAL_IP ||
+          "103.82.241.157:3100"}/data/getShdOneData/${this.name.toUpperCase()}`
+        )
+        .then(result => {
+          console.log(result);
+          if(this.name == "") {
+            this.shift = ""
+          } else {
+            this.shift = result.data.data.shift
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          
+        })
+      
     }
   },
   methods: {
@@ -748,6 +768,9 @@ export default {
       });
     setInterval(async () => {
       this.isError = false;
+      this.date = new Date().toISOString().slice(0,10)
+      console.log(new Date());
+      
       console.log("repeat");
       this.datacollection = {
         labels: [`Staff MT`, "OP MT Red", "OP MT White"],
